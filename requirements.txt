@@ -1,0 +1,8 @@
+torch
+numpy
+scikit-learn
+pyyaml
+einops
+tqdm
+torchdeq==0.1
+# AOC digital twin (not on PyPI under this name): pip install -e <clone of https://github.com/microsoft/aoc> --no-deps

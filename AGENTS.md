@@ -35,6 +35,8 @@ tensor networks (inference) and simulated bifurcation (optimisation), both mappe
 - Energies from different summation orders differ by ~1e-6: use tolerance = 1/4 of the energy quantum.
 - Sandbox/CI note: single commands may be time-limited; long jobs are written resumable (`*_run.py`).
 - Linear QUBO terms: fold into the matrix via a reference spin (injection range is only +-1.3 V).
+- TESB's beta must be scaled to the typical coupling drive |J s| per spin (paper's beta = 1 assumes ~10-20).
+- Field calibration subtracts *all* measured field: calibrate first, then add intended fields (e.g. tabu).
 
 ## Plan (next steps, in order)
 
@@ -57,9 +59,13 @@ tensor networks (inference) and simulated bifurcation (optimisation), both mappe
 4. Quantify how much of the fine-tuned model is still an exact MPS (effective cores vs non-MPS residual).
 
 ### C. QUBO algorithm
-1. Keep dSB (quantum-inspired, exact mapping onto the AOC update) as the default optimiser.
-2. Cheap check: longer anneals / more samples on hard N = 44 instances (hardware makes these cheap).
-3. Retune at the target size rather than at N = 16.
+1. Keep dSB (quantum-inspired, exact mapping onto the AOC update) as the default optimiser; TESB
+   (hardware-compatible, per-sample tabu field) as the enhanced variant.
+2. **Try TESB on the vertexing toy** — especially single-shot / few-sample quality, which is what the
+   throughput budget depends on. Rescale beta to the coupling drive of the vertexing QUBO.
+3. Cheap check: longer anneals / more samples on hard N = 44 instances (hardware makes these cheap).
+4. Retune at the target size rather than at N = 16.
+5. Related work to cite and position against: Okawa et al. 2024 (SB for tracking), Tao et al. 2026 (TESB).
 
 ### D. Questions for the hardware team (collect, do not guess)
 Noise level per channel per iteration; fidelity of the SLM floor and PD crosstalk models; feasibility of

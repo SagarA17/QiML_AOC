@@ -33,13 +33,14 @@ src/qiml_aoc/          reusable modules
   compile_mps.py       MPS -> 48-channel AOC compiler (layout, bias gating, full-pixel SLM programming, DC calibration)
   ising.py             Ising/QUBO instances, SA baseline, AOC-optimiser dynamics, twin mapping, field calibration
   sb.py                simulated bifurcation (dSB/bSB): reference + AOC-twin mapping
+  sb_tabu.py           tabu-enhanced dSB: paper-exact, hardware-compatible (per-sample field), twin
   pv_toy.py            toy 1D PV windows, QUBO formulation, exact solver, deterministic-annealing baseline
   qubo_instances.py    paper-protocol QUBO instance generator (16 variables)
 experiments/           scripts, grouped by study (each writes/reads artefacts in results/)
   mps/                 MPS compile, diagnosis, fine-tuning, floor/crosstalk fixes, resources
   qubo_replication/    replication of the paper's 16-variable hardware QUBO benchmark
   qubo_scaling/        paper family at N = 24/32/44 (step 2) and rugged Wishart (step 2.5)
-  simulated_bifurcation/  dSB vs previous solvers on rugged instances
+  simulated_bifurcation/  dSB and tabu-enhanced dSB vs previous solvers on rugged instances
   vertexing/           toy PV finding on the twin
   early_exploration/   first QUBO attempts (kept for the record; superseded)
 results/               saved results (.pt) used by the report scripts
@@ -108,6 +109,21 @@ momentum gamma, saturation = inelastic walls). Untuned (Goto's defaults), gamma 
 
 (1000 samples each.) SA remains stronger per run; comparisons are per sample, not per unit compute.
 
+**Tabu-enhanced dSB (TESB; Tao et al., Commun. Phys. 9, 100 (2026)).** The tabu penalty expands into a pump
+shift plus a *linear field*, so it maps onto the AOC without SLM reprogramming: warm-up runs build a tabu list,
+checking runs get a per-sample field through the injection (applied after field calibration). The paper re-draws
+the mini-batch every iteration; the hardware-compatible variant re-draws it once per sample. The paper's beta = 1
+is calibrated to Max-Cut coupling drives (~10-20 per spin); ours are ~1.3, so beta ~ 0.05-0.1 is equivalent
+(beta = 1 fails outright). Same ~1M loop iterations per instance as dSB:
+
+| M/N | N | dSB ideal | TESB paper, ideal | TESB hw, ideal | dSB, full twin | **TESB hw, full twin** | SA |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 32 | 15/15 | 15/15 | 15/15 | 15/15 | 15/15 | 15/15 |
+| 0.5 | 44 | 10/15 | 12/15 | 13/15 | 6/15 | **10/15** | 14/15 |
+
+The per-sample (hardware) variant is as good as the per-iteration one. Gains are modest and statistically
+limited (15 instances, success rates ~0.1% per run); SA remains ~3x better per run.
+
 ## 3. Toy primary-vertex finding
 
 1D windows: 11 tracks, 2–4 vertices in 2 mm (>= 0.15 mm apart), z0 resolution 20–120 um. QUBO over
@@ -142,4 +158,6 @@ limits physics quality (DA beats the QUBO optimum); the twin needs ~10x more sam
 
 Kalinin et al., *Analog optical computer for AI inference and combinatorial optimization*, Nature 645 (2025).
 Kalinin et al., *Analog Iterative Machine (AIM)*, arXiv:2304.12594. Goto et al., *Sci. Adv.* 5 (2019) & 7 (2021).
+Tao et al., Tabu-enhanced simulated bifurcation, Commun. Phys. 9, 100 (2026).
+Okawa et al., Quantum-annealing-inspired algorithms for track reconstruction, Comput. Softw. Big Sci. 8, 16 (2024).
 Hamze et al., "Wishart planted ensemble: a tunably rugged pairwise Ising model". Das et al., track clustering with a quantum annealer (2019).

@@ -5,4 +5,4 @@ pyyaml
 einops
 tqdm
 torchdeq==0.1
-# AOC digital twin (not on PyPI under this name): pip install -e <clone of https://github.com/microsoft/aoc> --no-deps
+# AOC digital twin (not on PyPI under this name): git submodule update --init && pip install -e external/aoc

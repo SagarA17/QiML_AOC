@@ -16,12 +16,16 @@ performance claim against classical baselines.
 
 ## Setup
 
+The digital twin is a git submodule at `external/aoc` (pinned to upstream commit `92d9014`).
+
 ```bash
-pip install torch numpy scikit-learn pyyaml einops tqdm "torchdeq==0.1"
-git clone https://github.com/microsoft/aoc.git && pip install -e aoc --no-deps
+git clone --recurse-submodules <this repo>      # or, in an existing clone: git submodule update --init
+conda create -p <envs>/QiML_AOC python=3.11 pip && conda activate <envs>/QiML_AOC
+pip install -r requirements.txt
+pip install -e external/aoc
 ```
 
-Note: `pip install aoc` from PyPI installs an **unrelated** package; install the twin from GitHub.
+Note: `pip install aoc` from PyPI installs an **unrelated** package; always install the twin from the submodule.
 The twin's `AOCCell.matrix` / `AOCCell.bias` setters are ignored by the forward pass upstream; we patch
 this in `src/qiml_aoc/common.py` (`PatchedAOCCell`) without changing any physics.
 

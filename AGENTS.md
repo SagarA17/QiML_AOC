@@ -27,7 +27,9 @@ tensor networks (inference) and simulated bifurcation (optimisation), both mappe
 
 ## Practical notes / lessons learned
 
-- Install the twin from GitHub (PyPI `aoc` is unrelated). Keep `PatchedAOCCell` (external matrix/bias fix).
+- The twin is the submodule `external/aoc` (PyPI `aoc` is unrelated); bump the pin deliberately and re-check
+  results. Keep `PatchedAOCCell` (external matrix/bias fix).
+- Use the dedicated `QiML_AOC` conda env; never install into other existing environments.
 - Per-channel calibration is applied only for 48x48 matrices — always pad to 48 channels.
 - Channel 8 is dead; channels 1, 46, 3 are weakest. Leave dead/weak rows idle where possible.
 - The SLM darkness floor leaks through every pixel; sparse encodings need full-pixel programming.

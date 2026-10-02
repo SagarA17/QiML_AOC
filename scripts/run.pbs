@@ -1,0 +1,34 @@
+#!/bin/bash
+#PBS -A ATLAS_workflow_ALCF
+#PBS -q by-gpu
+#PBS -l select=1,walltime=02:00:00,filesystems=home:eagle
+#PBS -j oe
+#PBS -N qiml_aoc
+#
+# Generic single-GPU runner for this repo. Submit from the repo root, logs go to logs/:
+#   qsub -o logs/ -v SCRIPT=scripts/gpu_check.py -l walltime=00:10:00 scripts/run.pbs
+#   qsub -o logs/ -v SCRIPT=experiments/<study>/<x>_run.py,ARGS="--foo 1" scripts/run.pbs
+# Keep walltimes short (a couple of hours queues fastest; max 24h). Runs are resumable (*_run.py), so a
+# job that hits walltime can simply be resubmitted.
+# Env: QIML_AOC_ENV overrides the conda env (default: the project env). Data root: QIML_AOC_DATA.
+
+# Non-interactive PBS jobs don't source ~/.bashrc; do it explicitly so conda is set up.
+# Must precede `set -u` (/etc/bashrc references unbound vars).
+source "$HOME/.bashrc"
+conda activate "${QIML_AOC_ENV:-/lus/eagle/projects/ATLAS_workflow_ALCF/sagar/conda/envs/QiML_AOC}"
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR:-$HOME/QiML_AOC}"
+export QIML_AOC_DATA="${QIML_AOC_DATA:-/lus/eagle/projects/ATLAS_workflow_ALCF/sagar/QiML_AOC}"
+# Torch otherwise starts one thread per core of the whole node; stay within this job's CPU share.
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-$(nproc)}"
+
+echo "──────────────────────────────────────────────"
+echo " host   : $(hostname)"
+echo " job id : ${PBS_JOBID:-local}"
+echo " python : $(which python)"
+echo " CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-<unset>}  OMP_NUM_THREADS=$OMP_NUM_THREADS"
+echo "──────────────────────────────────────────────"
+
+: "${SCRIPT:?SCRIPT=<path relative to repo root> must be set (qsub -v SCRIPT=...)}"
+python "$SCRIPT" ${ARGS:-}

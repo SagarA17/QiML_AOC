@@ -39,20 +39,26 @@ tensor networks (inference) and simulated bifurcation (optimisation), both mappe
 - Linear QUBO terms: fold into the matrix via a reference spin (injection range is only +-1.3 V).
 - TESB's beta must be scaled to the typical coupling drive |J s| per spin (paper's beta = 1 assumes ~10-20).
 - Field calibration subtracts *all* measured field: calibrate first, then add intended fields (e.g. tabu).
+- "Instances solved at least once" is noise-dominated at ~0.1% per-run success (an RNG re-draw moved one TESB
+  variant from 13/15 to 7/15). Compare mean per-run success probability, paired per instance.
+- TESB as published (Tao et al.): the authors' released code omits the pump shift a -> a - c0*beta and drops the
+  best warm-up states from the tabu list; our `sb_tabu.py` follows the paper's equations, with both as options.
+- Compute: run jobs through PBS (`scripts/run.pbs`, queue by-gpu, 1 GPU, walltime as short as possible);
+  the login node is for smoke tests only. Data lives on eagle (`$QIML_AOC_DATA`).
 
 ## Plan (next steps, in order)
 
-### A. Vertexing (optimisation) — make the physics meaningful
-1. **Proper metrics**: vertex reconstruction efficiency, purity, merge and split rates, z resolution of
-   reconstructed vertices; per-window and per-event. Replace ARI as headline metric.
-2. **Improve the formulation** until the QUBO optimum at least matches deterministic annealing
-   (current: QUBO optimum 63/100 perfect vs DA 68/100). Options: better pair function, vertex-position
-   variables (QUMO; note x*v^2 is cubic -> needs alternating/BCD or a different encoding), outlier handling.
-3. **Single-shot quality on the twin** (currently 22% optimum at 1 sample, 9% invalid one-hot).
-   Investigate penalty scaling / dynamic range and dSB parameters; target few samples per window.
-4. **Throughput budget**: windows x samples x ~20 us per event vs event-filter rates (ATLAS Phase-II EF:
-   1 MHz in, 10 kHz out). Report required number of AOC units.
-5. Then secondary vertices in jets (FCC-ee flavour tagging) and pile-up-dense PV windows (FCC-hh).
+### A. Vertexing (optimisation): secondary vertices in jets
+Dataset: Shlomi et al. (arXiv:2008.02831; Zenodo 4044628): 14 TeV ttbar jets, Pythia8 + Delphes (ATLAS-like),
+no pile-up (state as a limitation). The toy 1D PV study (`pv_toy.py`) is superseded.
+1. **Benchmark metrics exactly as Shlomi et al., Table 2**, split by jet flavour (b, c, light): jet-level F1, RI and
+   ARI (their *one-sided* ARI with Bell numbers, eq. 11; NOT sklearn's), the ARI categories perfect / intermediate /
+   poor, vertex and vertex-pair edge accuracies, ARI vs n_tracks and n_vertices. Reference rows: AVR, Track Pair,
+   RNN, Set2Graph.
+2. **QUBO formulation** for track-to-vertex assignment; report the exact QUBO optimum as the ceiling.
+3. **Solver**: TESB vs plain dSB (ablation) vs SA, idealised and on the twin; single-shot / few-sample quality.
+4. **Throughput budget** for the HL-LHC HLT / event filter (b-jet triggers, e.g. HH -> 4b); jets per AOC unit
+   (block-diagonal packing of small jets into 48 channels).
 
 ### B. Tensor networks (inference) — move to HEP data
 1. Replace digits with a HEP task: jet tagging and/or anomaly detection (SMPO -> full MPS variant).
@@ -61,15 +67,16 @@ tensor networks (inference) and simulated bifurcation (optimisation), both mappe
 4. Quantify how much of the fine-tuned model is still an exact MPS (effective cores vs non-MPS residual).
 
 ### C. QUBO algorithm
-1. Keep dSB (quantum-inspired, exact mapping onto the AOC update) as the default optimiser; TESB
-   (hardware-compatible, per-sample tabu field) as the enhanced variant.
-2. **Try TESB on the vertexing toy** — especially single-shot / few-sample quality, which is what the
-   throughput budget depends on. Rescale beta to the coupling drive of the vertexing QUBO.
+1. TESB is the solver of record (justified by its exact AOC mapping, not as a general SOTA claim); plain dSB is
+   the "tabu off" ablation. Its benefit at our sizes is small so far (~1.3x per-run success at N = 44,
+   idealised; none on the twin with a static per-sample field): measure it on the jet QUBOs, don't assume it.
+2. Rescale beta to the coupling drive of each QUBO family.
 3. Cheap check: longer anneals / more samples on hard N = 44 instances (hardware makes these cheap).
 4. Retune at the target size rather than at N = 16.
 5. Related work to cite and position against: Okawa et al. 2024 (SB for tracking), Tao et al. 2026 (TESB).
 
 ### D. Questions for the hardware team (collect, do not guess)
 Noise level per channel per iteration; fidelity of the SLM floor and PD crosstalk models; feasibility of
-open-loop probe calibration (offsets, residual field); momentum gain range (gamma ~ 0.95); timing per
+open-loop probe calibration (offsets, residual field); injection (DAC) update rate, i.e. can the
+injection change every iteration (per-iteration tabu field); is alpha < 0 possible (TESB pump shift); momentum gain range (gamma ~ 0.95); timing per
 iteration and sampling protocol; power per module.

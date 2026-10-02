@@ -10,16 +10,17 @@ from ising import best_of, energy, calibrate_field
 from common import F_pos, N_CH
 
 
-def c0_goto(J):
+def c0_goto(J, h=None):
+    """c0 = 0.5 sqrt((N - 1) / (sum_ij J_ij^2 + 2 sum_i h_i^2)) (Goto et al. 2021; h term as in Tao et al. 2026)."""
     N = J.shape[0]
-    sigma = math.sqrt(float((J ** 2).sum()) / (N * (N - 1)))
-    return 0.5 / (math.sqrt(N) * sigma)
+    s = float((J ** 2).sum()) + (2.0 * float((h ** 2).sum()) if h is not None else 0.0)
+    return 0.5 * math.sqrt((N - 1) / s)
 
 
 def sb_ideal(J, h, runs=1000, T=1000, variant="dSB", c0_scale=1.0, seed=0, window=40):
     """Goto's (b/d)SB, Delta t = 1, a0 = 1, linear pump, inelastic walls; best-of-window readout."""
     g = torch.Generator().manual_seed(seed)
-    N = J.shape[0]; c0 = c0_scale * c0_goto(J)
+    N = J.shape[0]; c0 = c0_scale * c0_goto(J, h)
     x = 0.2 * torch.rand(runs, N, generator=g) - 0.1
     y = 0.2 * torch.rand(runs, N, generator=g) - 0.1
     samples = []
@@ -41,7 +42,7 @@ def sb_twin(tw, runs=1000, T=1000, gamma=1.0, c0_scale=1.0, seed=0, wall=3.0, wi
     from aoc.aoc_cell import create_saturation
     sat = create_saturation(tw.cell.hardware_parameters.saturation)
     g = torch.Generator().manual_seed(seed)
-    k = wall * c0_scale * c0_goto(tw.J) / tw.amp
+    k = wall * c0_scale * c0_goto(tw.J, tw.h) / tw.amp
     c = tw.program_k(k)
     if field_cal:
         c = calibrate_field(tw, k, c)

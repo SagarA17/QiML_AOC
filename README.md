@@ -114,20 +114,26 @@ momentum gamma, saturation = inelastic walls). Untuned (Goto's defaults), gamma 
 
 (1000 samples each.) SA remains stronger per run; comparisons are per sample, not per unit compute.
 
-**Tabu-enhanced dSB (TESB; Tao et al., Commun. Phys. 9, 100 (2026)).** The tabu penalty expands into a pump
-shift plus a *linear field*, so it maps onto the AOC without SLM reprogramming: warm-up runs build a tabu list,
-checking runs get a per-sample field through the injection (applied after field calibration). The paper re-draws
-the mini-batch every iteration; the hardware-compatible variant re-draws it once per sample. The paper's beta = 1
-is calibrated to Max-Cut coupling drives (~10-20 per spin); ours are ~1.3, so beta ~ 0.05-0.1 is equivalent
-(beta = 1 fails outright). Same ~1M loop iterations per instance as dSB:
+**Tabu-enhanced dSB (TESB; Tao et al., Commun. Phys. 9, 100 (2026)).** The tabu penalty
+(c0 beta / 2|Mb|) sum_s |x + s|^2 expands into a pump shift a -> a - c0 beta plus a *linear field*, so it maps onto
+the AOC without SLM reprogramming: warm-up dSB runs build a tabu list (minus the best warm-up states), and checking
+runs get the field through the injection (applied after field calibration). Implementation follows the paper's
+equations; note that the authors' released code omits the pump shift. Variants: mini-batch re-drawn every iteration
+and shared by all samples (paper), or drawn once per sample (static per-run injection). The paper's beta = 1 is
+calibrated to Max-Cut coupling drives (~10-20 per spin); ours are ~1.3, so beta ~ 0.05-0.1 is used. Same ~1M loop
+iterations per instance as dSB; readout window 40 for all. Cells: instances solved at least once (mean per-run
+success probability):
 
-| M/N | N | dSB ideal | TESB paper, ideal | TESB hw, ideal | dSB, full twin | **TESB hw, full twin** | SA |
-|---|---|---|---|---|---|---|---|
-| 0.5 | 32 | 15/15 | 15/15 | 15/15 | 15/15 | 15/15 | 15/15 |
-| 0.5 | 44 | 10/15 | 12/15 | 13/15 | 6/15 | **10/15** | 14/15 |
+| N | dSB ideal | TE paper eqs. | TE no shift | TE per-sample | dSB twin | TE per-sample, twin | TE per-iter., twin | SA |
+|---|---|---|---|---|---|---|---|---|
+| 32 | 15/15 (.0155) | 15/15 (.0157) | 15/15 (.0137) | 15/15 (.0127) | 15/15 (.0071) | 15/15 (.0091) | 15/15 (.0084) | 15/15 (.0338) |
+| 44 | 10/15 (.0011) | 12/15 (.0014) | 11/15 (.0015) | 7/15 (.0013) | 6/15 (.0009) | 4/15 (.0005) | 6/15 (.0007) | 14/15 (.0035) |
 
-The per-sample (hardware) variant is as good as the per-iteration one. Gains are modest and statistically
-limited (15 instances, success rates ~0.1% per run); SA remains ~3x better per run.
+The solved-instance count is dominated by sampling noise at ~0.1% per-run success: re-drawing the random numbers
+of an otherwise identical prototype run moved the per-sample variant from 13/15 to 7/15 at an unchanged mean
+success rate. On the per-run success rate, TESB gains at most ~1.3x over dSB on these small instances (idealised),
+and the static per-sample field does not help on the twin. SA remains ~3x better per run. The paper's large gains
+are on N = 800-2000 Max-Cut; the benefit on our problem sizes has to be measured per application.
 
 ## 3. Toy primary-vertex finding
 

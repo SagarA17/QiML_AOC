@@ -48,6 +48,7 @@ experiments/           scripts, grouped by study (each writes/reads artefacts in
   vertexing/           toy PV finding on the twin
   early_exploration/   first QUBO attempts (kept for the record; superseded)
 results/               saved results (.pt) used by the report scripts
+scripts/fetch_datasets.py  download + md5-verify Zenodo datasets into $QIML_AOC_DATA (default: eagle project dir)
 ```
 
 Scripts can be run from anywhere: each adds `src/qiml_aoc` to the path and works inside `results/`.
